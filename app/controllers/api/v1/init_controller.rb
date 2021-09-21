@@ -1,5 +1,6 @@
 require 'uri'
 require 'net/http'
+require 'json'
 
 class Api::V1::InitController < ApplicationController
 
@@ -33,6 +34,20 @@ class Api::V1::InitController < ApplicationController
             return render json: { message: 'Error to do HTTP request for Actors.' }, status: 400
         end
         logger.debug "Done getting Actors data"
+
+        # Store Movies data to DB
+        begin
+            Movie.create(JSON.parse(movies_data))
+        rescue ActiveRecord::RecordNotUnique => ex
+            logger.info "Already initialized Movies"
+        end
+
+        # Store Actors data to DB
+        begin
+            Actor.create(JSON.parse(actors_data))
+        rescue ActiveRecord::RecordNotUnique => ex
+            logger.info "Already initialized Actors"
+        end
 
         # Return data to requester
         render json: { message: "Done requesting Movies and Actors data." }, status: 200
